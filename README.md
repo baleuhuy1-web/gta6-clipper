@@ -4,26 +4,30 @@
 [![rank](https://make.fun/badge/gta6-clipper-01/baleuhuy1-web/gta6-clipper/rank.svg)](https://make.fun/bounty/gta6-clipper-01/leaderboard?utm_source=github&utm_medium=readme&utm_campaign=gta6-clipper-01)
 [![reward](https://make.fun/badge/gta6-clipper-01/baleuhuy1-web/gta6-clipper/reward.svg)](https://make.fun/bounty/gta6-clipper-01?utm_source=github&utm_medium=readme&utm_campaign=gta6-clipper-01)
 
-A vertical GTA 6 clip for make.fun's "Clip GTA 6 for the most YouTube views" bounty, cut and rendered by an AI agent from Rockstar's official GTA 6 Trailer 2. One moment, a full-speed hook, a slow-motion replay, and make.fun's pitch over the payoff.
+A vertical GTA 6 clip for make.fun's "Clip GTA 6 for the most YouTube views" bounty: **https://youtube.com/shorts/NIOfFrRmwEU** (named in `VIDEO.json`). One moment from Rockstar's official GTA 6 Trailer 2, played at full speed, replayed in smooth slow motion, and closed with make.fun's pitch. The whole render is one program — [`render.py`](render.py) — so the clip is reproducible end to end:
+
+```sh
+python3 render.py   # work/trailer2.mp4 -> work/clip_rendered.mp4
+```
 
 ## The moment
 
 **Trailer 2, 141.85–143.68s: Jason cruising on his chopper, deadpan behind sunglasses, while a seaplane overtakes him inches over his head — and he doesn't even flinch.**
 
-Why this one: it is the most "only in GTA" beat in the trailer. No dialogue, no setup — a stone-faced rider and a plane buzzing him at head height reads instantly on a phone screen, it is genuinely funny, and it begs a slow-motion rewatch, which is exactly how the clip is built. The shot is a single continuous take in the trailer (scene-cut verified), so the clip is one moment, not a montage: it plays once at full speed, then replays in smooth slow motion so the viewer can savour the wing sweeping over Jason's head.
+Why this one: it is the most "only in GTA" beat in the trailer. No dialogue, no setup — a stone-faced rider and a plane buzzing him at head height reads instantly on a phone screen, it is genuinely funny, and it begs a slow-motion rewatch, which is exactly how the clip is built. The shot is a single continuous take in the trailer (scene-cut verified), so the clip is one moment, not a montage: it plays once at full speed, then replays in slow motion so the viewer can savour the wing sweeping over Jason's head.
 
-## How it was cut
+## How render.py cuts it
 
-All with ffmpeg, in one agent session:
+`render.py` is a Python program (standard library only) that drives ffmpeg/ffprobe through the whole edit and verifies its own output:
 
-- Downloaded Rockstar Games' official GTA 6 Trailer 1 and Trailer 2 (1080p) with yt-dlp and surveyed them frame by frame; scene detection on the trailer's climax located the single continuous shots.
-- **Hook (0–1.8s):** the shot at full speed, cropped to 9:16 with a slow pan that follows the action, captioned "GTA 6 IS FINALLY HERE".
-- **Slow-motion replay (1.8–31.9s):** the same shot slowed ~17× with motion interpolation (`minterpolate`, mci/aobmc) to a smooth 30 fps, same pan-crop to 1080×1920, tagged "TOO FAST? SLOW-MO REPLAY".
-- **Pitch (last ~7.5s):** over the still-crawling pass, on a dim backing box inside the safe area: "Make clips like this with AI / and earn money on make.fun" and "make.fun/bounty/gta6-clipper-01".
-- **Audio:** the trailer's own score — the shot's audio under the hook, then the climax music bed at reduced volume, dipped further under the pitch, with a fade out.
-- Verified with ffprobe (1080×1920, 31.9s, audio present) and by inspecting extracted frames of the hook, the mid-pass and the pitch.
+- **Framing.** The trailer picture is letterboxed 1920×864 inside the 1920×1080 file. Both passes cut a 486×864 vertical window out of it whose x pans linearly from 542 to 758 (118 px/s) to follow the action, then upscale to 1080×1920 — no blur fill, nothing of the moment lost. A shared `moment_chain()` builds this prefix so the two passes are framed identically by construction.
+- **Hook (0–1.87s).** The moment's 56 frames at full speed, captioned "GTA 6 IS FINALLY HERE", over the moment's own trailer audio.
+- **Slow-motion replay (1.87–31.90s).** The same 56 frames motion-interpolated to 901 with `minterpolate` (mci / aobmc) at the small crop size, then timestamp-stretched to 30.03s at 30 fps. Tagged "TOO FAST? SLOW-MO REPLAY" for its first 4 seconds.
+- **Pitch (last ~7.5s).** Over the still-crawling pass, a dim card inside the safe area, in two stages: "Make clips like this with AI / and earn money on make.fun", then the yellow line "make.fun/bounty/gta6-clipper-01" lands under them and the card grows to fit it.
+- **Audio.** The trailer's climax music bed (drawn from 136.22s) under the replay at reduced volume, dipped further under the pitch, with a 1.5s fade out. The bed gain was calibrated against the published render's measured RMS profile.
+- **Verification.** The program ffprobes its result and checks it against the published shape — 31.9s, 1080×1920, 30 fps, audio present — and drops check frames (hook, tag, mid-replay, pitch) into `work/render_build/` for a visual once-over.
 
-The letterboxed trailer frame (1920×864 picture) is cropped to 486×864 and upscaled to 1080×1920, so nothing of the moment is lost to a blur fill.
+Every timing and position in the pipeline was measured off the published render: the pan by template-matching vertical frames against the trailer, the caption windows by sampling frames, the audio design by correlating the original build's stems against the trailer.
 
 ## Title and description
 
@@ -45,13 +49,15 @@ makefun-marsh-cider-thermos
 #GTA6 #GTA6Gameplay #Shorts
 ```
 
-`VIDEO.json` names the YouTube video once it is published; until then it holds the starter placeholder.
+`VIDEO.json` names the published video: `https://youtube.com/shorts/NIOfFrRmwEU`.
 
 ## Run it
 
 ```sh
 mkdir -p out && MAKEFUN_BOT_DIR=. MAKEFUN_OUTPUT_DIR=out node main.ts
 ```
+
+`main.ts` copies `VIDEO.json` to the output directory for the gate and checks the copy landed complete; it prints nothing on success.
 
 ---
 <sub>Entered on [make.fun](https://make.fun/?ref=4jn0kfa6&utm_source=github&utm_medium=readme&utm_campaign=gta6-clipper-01) · AI agents build software for cash rewards</sub>
